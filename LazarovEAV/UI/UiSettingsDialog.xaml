@@ -1,0 +1,109 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:LazarovEAV.UI"
+        xmlns:conf="clr-namespace:LazarovEAV.Config" x:Class="LazarovEAV.UI.UiSettingsDialog"
+        Title="Настройка на интерфейса" ResizeMode="NoResize"
+        DataContext="{x:Static conf:UiConfig.Instance}" WindowStartupLocation="CenterOwner" HorizontalAlignment="Left" VerticalAlignment="Top" SizeToContent="Height" Width="474">
+    <Window.Resources>
+        <ui:RgbConverter x:Key="RgbConverter" />
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <StackPanel VerticalAlignment="Top">
+                <Label Content="Елемент" Margin="10,10,10,0" VerticalAlignment="Top" RenderTransformOrigin="0.184,0.577" Padding="0"/>
+                <ComboBox x:Name="cbElements" Margin="10,5" VerticalAlignment="Top" SelectionChanged="cbElements_SelectionChanged"/>
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="1">
+            <GroupBox Margin="10,5" Header="Цвят" VerticalContentAlignment="Center">
+                <Grid VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Label Grid.Column="0" Grid.Row="0" Content="Червен" Margin="0,0,5,0" VerticalAlignment="Center" RenderTransformOrigin="1.961,0.731"/>
+                    <Slider Grid.Column="1" Grid.Row="0" x:Name="redSlider" Margin="0,0,0,5" VerticalAlignment="Bottom" Minimum="0" Maximum="255" ValueChanged="slider_ValueChanged"/>
+                    <TextBox Grid.Column="2" Grid.Row="0" Width="40" IsReadOnly="True" Text="{Binding Path=Value,ElementName=redSlider, StringFormat=\{0:F0\}}" VerticalContentAlignment="Center" HorizontalContentAlignment="Right" Margin="5,5,0,5"/>
+
+                    <Label Grid.Column="0" Grid.Row="1" Content="Зелен" Margin="0,0,5,0" RenderTransformOrigin="0.51,1.846" VerticalAlignment="Center"/>
+                    <Slider Grid.Column="1" Grid.Row="1" x:Name="greenSlider" VerticalAlignment="Center" Margin="0" Minimum="0" Maximum="255" ValueChanged="slider_ValueChanged"/>
+                    <TextBox Grid.Column="2" Grid.Row="1" Width="40" IsReadOnly="True" Text="{Binding Value, ElementName=greenSlider, StringFormat=\{0:F0\}}" VerticalContentAlignment="Center" HorizontalContentAlignment="Right" Margin="5,5,0,5"/>
+
+                    <Label Grid.Column="0" Grid.Row="2" Content="Син" Margin="0,0,5,0" VerticalAlignment="Center" RenderTransformOrigin="0.51,1.846"/>
+                    <Slider Grid.Column="1" Grid.Row="2" x:Name="blueSlider" VerticalAlignment="Center" Margin="0" Minimum="0" Maximum="255" ValueChanged="slider_ValueChanged"/>
+                    <TextBox Grid.Column="2" Grid.Row="2" Width="40" IsReadOnly="True" Text="{Binding Path=Value,ElementName=blueSlider, StringFormat=\{0:F0\}}" VerticalContentAlignment="Center" HorizontalContentAlignment="Right" Margin="5,5,0,5"/>
+
+                    <Label Grid.Column="0" Grid.Row="3" Content="Прозрачност" Margin="0,0,5,0" VerticalAlignment="Center" RenderTransformOrigin="0.51,1.846"/>
+                    <Slider Grid.Column="1" Grid.Row="3" x:Name="transpSlider" VerticalAlignment="Center" Margin="0" Minimum="0" Maximum="255" ValueChanged="slider_ValueChanged"/>
+                    <TextBox Grid.Column="2" Grid.Row="3" Width="40" IsReadOnly="True" Text="{Binding Path=Value,ElementName=transpSlider, StringFormat=\{0:F0\}}" VerticalContentAlignment="Center" HorizontalContentAlignment="Right" Margin="5,5,0,5"/>
+
+                    <Rectangle Grid.Column="3" Grid.Row="0" Grid.RowSpan="4" x:Name="rectColor" Margin="10,0" Stroke="Black">
+                        <Rectangle.Fill>
+                            <SolidColorBrush>
+                                <SolidColorBrush.Color>
+                                    <MultiBinding Converter="{StaticResource RgbConverter}">
+                                        <Binding Path="Value" ElementName="redSlider" />
+                                        <Binding Path="Value" ElementName="greenSlider" />
+                                        <Binding Path="Value" ElementName="blueSlider" />
+                                        <Binding Path="Value" ElementName="transpSlider" />
+                                    </MultiBinding>
+                                </SolidColorBrush.Color>
+                            </SolidColorBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
+                </Grid>
+            </GroupBox>
+        </Grid>
+        <Grid Grid.Row="2">
+            <GroupBox Header="Графика" Margin="10,0,10,5" VerticalAlignment="Top">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Label Grid.Row="0" Grid.Column="0" Content="Прозрачност на фона" Margin="0,0,5,0" RenderTransformOrigin="1.961,0.731" Padding="5" VerticalAlignment="Center"/>
+                    <Slider Grid.Row="0" Grid.Column="1" x:Name="bgTransp" VerticalAlignment="Center" Margin="0" Minimum="0" Maximum="1.0" ValueChanged="Slider_ValueChanged_1" Value="{Binding LiveGraphBackgroundOpacity}" TickFrequency="0.05" TickPlacement="BottomRight"/>
+                    <TextBox Grid.Row="0" Grid.Column="2" Width="40" IsReadOnly="True" Text="{Binding Value, ElementName=bgTransp, StringFormat=\{0:F2\}}" VerticalContentAlignment="Center" HorizontalContentAlignment="Right" Margin="5,5,10,5"/>
+
+                    <Label Grid.Row="1" Grid.Column="0" Content="Затъмняване на фона" Margin="0,0,5,0" VerticalAlignment="Center" RenderTransformOrigin="1.961,0.731" Padding="5"/>
+                    <Slider Grid.Row="1" Grid.Column="1" x:Name="bgDark" VerticalAlignment="Center" Margin="0" Minimum="0" Maximum="1.0" ValueChanged="Slider_ValueChanged_2" Value="{Binding LiveGraphBackgroundDarkenOpacity}" TickFrequency="0.05" TickPlacement="BottomRight"/>
+                    <TextBox Grid.Row="1" Grid.Column="2" Width="40" IsReadOnly="True" Text="{Binding Path=Value,ElementName=bgDark, StringFormat=\{0:F2\}}" VerticalContentAlignment="Center" HorizontalContentAlignment="Right" Margin="5,5,10,5"/>
+
+                    <Label Grid.Row="2" Grid.Column="0" Content="Дебелина на линията" Margin="0,0,5,0" VerticalAlignment="Center" RenderTransformOrigin="1.961,0.731" Padding="5"/>
+                    <Slider Grid.Row="2" Grid.Column="1" x:Name="lnThick" VerticalAlignment="Center" Margin="0" Minimum="0" ValueChanged="Slider_ValueChanged_3" Value="{Binding LiveGraphLineThickness}" TickPlacement="BottomRight" TickFrequency="0.5"/>
+                    <TextBox Grid.Row="2" Grid.Column="2" Width="40" IsReadOnly="True" Text="{Binding Path=Value,ElementName=lnThick, StringFormat=\{0:F2\}}" VerticalContentAlignment="Center" HorizontalContentAlignment="Right" Margin="5,5,10,5"/>
+                </Grid>
+            </GroupBox>
+        </Grid>
+        <Grid Grid.Row="3" Margin="0,5">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" FlowDirection="RightToLeft" Margin="0,0,10,0">
+                <Button Content="Запиши" HorizontalAlignment="Right" Margin="0,5,5,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
+                <Button Content="Откажи" HorizontalAlignment="Right" Margin="0,5,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click_1"/>
+            </StackPanel>
+            <Button Content="Възстанови основни" HorizontalAlignment="Left" Margin="10,5,0,5" VerticalAlignment="Top" Width="149" Click="Button_Click_2"/>
+        </Grid>
+    </Grid>
+</Window>

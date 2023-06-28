@@ -1,0 +1,195 @@
+﻿<UserControl x:Class="LazarovEAV.UI.HandImagePanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ui="clr-namespace:LazarovEAV.UI"
+             xmlns:vm="clr-namespace:LazarovEAV.ViewModel"
+             xmlns:vmock="clr-namespace:LazarovEAV.ViewModel.Mock"
+             xmlns:util="clr-namespace:LazarovEAV.UI.Util" 
+             xmlns:conf="clr-namespace:LazarovEAV.Config"
+             xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+             mc:Ignorable="d" 
+             d:DesignHeight="326" d:DesignWidth="256">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="..\Resources\widget_styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <ui:BodySideToTransformConverter x:Key="BodySideToTransformConv"/>
+            <ui:BodySideToOpacityConverter x:Key="BodySideToOpacityConv"/>
+            <ui:BodySideToVisibilityConverter x:Key="BodySideToVisibilityConv"/>
+            <ui:PointToEllipseConverter x:Key="PointToEllipseConv"/>
+            
+            <ui:EllipseOffsetConverter x:Key="EllipseOffsetConverter"/>
+            <ui:EllipseVisibilityConverter x:Key="EllipseVisibilityConverter"/>
+            <ui:EllipseFillConverter x:Key="EllipseFillConverter"/>
+            <ui:EllipseToolTipConverter x:Key="EllipseToolTipConverter"/>
+            <ui:EllipseSizeConverter x:Key="EllipseSizeConverter"/>
+            <ui:ImageSourceConverter x:Key="ImageSourceConverter"/>
+            <ui:ImageTransformConverter x:Key="ImageTransformConverter"/>
+
+
+            <Storyboard x:Key="crossHairStoryboard" Duration="00:00:00.90" RepeatBehavior="Forever">
+                <DoubleAnimationUsingKeyFrames Storyboard.TargetName="selectedPointMarker" Storyboard.TargetProperty="Opacity">
+                    <DiscreteDoubleKeyFrame KeyTime="00:00:00.00" Value="0"/>
+                    <DiscreteDoubleKeyFrame KeyTime="00:00:00.10" Value="0.25"/>
+                    <DiscreteDoubleKeyFrame KeyTime="00:00:00.20" Value="0.50"/>
+                    <DiscreteDoubleKeyFrame KeyTime="00:00:00.30" Value="0.75"/>
+                    <DiscreteDoubleKeyFrame KeyTime="00:00:00.40" Value="1.0"/>
+                    <DiscreteDoubleKeyFrame KeyTime="00:00:00.50" Value="0.60"/>
+                    <DiscreteDoubleKeyFrame KeyTime="00:00:00.60" Value="0.30"/>
+                    <DiscreteDoubleKeyFrame KeyTime="00:00:00.70" Value="0.0"/>
+                </DoubleAnimationUsingKeyFrames>
+            </Storyboard>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    
+    <UserControl.Triggers>
+        <EventTrigger RoutedEvent="Loaded">
+            <EventTrigger.Actions>
+                <BeginStoryboard Storyboard="{StaticResource crossHairStoryboard}"/>
+            </EventTrigger.Actions>
+        </EventTrigger>
+    </UserControl.Triggers>
+<!--    
+    <UserControl.DataContext>
+        <vm:DiagModeViewModel/>
+    </UserControl.DataContext>
+    -->
+    <Grid Margin="0">
+        <Grid x:Name="gridViewBox" Margin="5" RenderTransformOrigin="0.5,0.5" ClipToBounds="True"
+                Grid.RenderTransform="{Binding BodySide, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:HandImagePanel}}, Converter={StaticResource BodySideToTransformConv}, Mode=OneWay}">
+            <Viewbox x:Name="viewBox" Cursor="Arrow"> <!-- ContextMenuOpening="viewBox_ContextMenuOpening" -->
+                <Viewbox.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Задай изображение" />
+                        <!-- Click="menuItem_ChangeImage_Click" -->
+                        <MenuItem Header="Възстанови оригиналното изображение" />
+                        <!-- Click="menuItem_RevertImage_Click" -->
+                        <MenuItem Header="Отмести всички точки" />
+                        <!-- Click="menuItem_OffsetPoints_Click" -->
+                        <Separator/>
+                        <MenuItem Header="Настройки"/>
+                        <!-- Click="menuItem_Settings_Click" -->
+                    </ContextMenu>
+                </Viewbox.ContextMenu>
+                <Grid>
+                    <Image x:Name="imageFrame" Source="{Binding Path=SelectedMeridian.SelectedPoint, Converter={StaticResource ImageSourceConverter}}" Width="658" Height="800" RenderTransformOrigin="0.5,0.5">
+                        <Image.Opacity>
+                            <MultiBinding Converter="{StaticResource BodySideToOpacityConv}">
+                                <Binding Path="SelectedSide"/>
+                                <Binding Path="BodySide" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:HandImagePanel}}"/>
+                                <Binding Path="InactiveOpacity" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:HandImagePanel}}"/>                                
+                            </MultiBinding>
+                        </Image.Opacity>
+                        <Image.RenderTransform>
+                            <MultiBinding Converter="{StaticResource ImageTransformConverter}">
+                                <Binding Path="DataContext.SelectedMeridian" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:HandImagePanel}}"/>
+                                <Binding Path="DataContext.SelectedMeridian.SelectedPoint" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:HandImagePanel}}"/>
+                                <Binding Path="DataContext.FitPoints" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:HandImagePanel}}"/>
+                                <Binding Path="ActualWidth" RelativeSource="{RelativeSource Self}"/>
+                                <Binding Path="ActualHeight" RelativeSource="{RelativeSource Self}"/>
+                                <Binding Path="SelectedSide"/>
+                                <Binding Path="BodySide" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:HandImagePanel}}"/>
+                            </MultiBinding>
+                        </Image.RenderTransform>
+                    </Image>
+                    <Canvas x:Name="pointsCanvas2" ScrollViewer.VerticalScrollBarVisibility="Disabled" RenderTransformOrigin="0.5,0.5"
+                            RenderTransform="{Binding RenderTransform, ElementName=imageFrame}">
+                        <Path x:Name="selectedPointMarker" Stretch="Fill" 
+                                Width="{Binding ActualHeight, RelativeSource={RelativeSource Self}}" 
+                                Fill="{Binding Path=SelectedPointBrush, Source={x:Static conf:UiConfig.Instance}}" 
+                                StrokeThickness="0" StrokeLineJoin="round" 
+                                Canvas.Left="{Binding SelectedMeridian.SelectedPoint.X}"
+                                Canvas.Top="{Binding SelectedMeridian.SelectedPoint.Y}"
+                                Data="m 21,10.349553 c 5.884912,0 10.655523,4.7706 10.655523,10.65549 0,5.8849 -4.770611,10.6555 -10.655523,10.6555 -5.884913,0 -10.655523,-4.7706 -10.655523,-10.6555 0,-5.88489 4.77061,-10.65549 10.655523,-10.65549 z M 21,0.00505268 c 11.597993,0 21,9.40200002 21,20.99999032 0,11.598 -9.402007,21.00003 -21,21.00003 -11.597993,0 -21,-9.40203 -21,-21.00003 C 0,9.4070527 9.402007,0.00505268 21,0.00505268 z m 0,3.88890002 c -9.450246,0 -17.111144,7.6609003 -17.111144,17.1110903 0,9.4502 7.660898,17.1111 17.111144,17.1111 9.450148,0 17.111144,-7.6609 17.111144,-17.1111 C 38.111144,11.554853 30.450246,3.8939527 21,3.8939527 z" 
+                                RenderTransformOrigin="0.5,0.5">
+                            <Path.Height>
+                                <Binding Path="RenderTransform" 
+                                         ElementName="imageFrame"
+                                         Converter="{StaticResource EllipseSizeConverter}"
+                                         ConverterParameter="35"/>
+                            </Path.Height>
+                            <Path.RenderTransform>
+                                <Binding Path="ActualHeight" RelativeSource="{RelativeSource Self}" Converter="{StaticResource EllipseOffsetConverter}"/>
+                            </Path.RenderTransform>
+                            <Path.Visibility>
+                                <MultiBinding Converter="{StaticResource BodySideToVisibilityConv}">
+                                    <Binding Path="SelectedSide"/>
+                                    <Binding Path="BodySide" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:HandImagePanel}}"/>
+                                </MultiBinding>
+                            </Path.Visibility>
+                        </Path>
+                    </Canvas>
+                    <ItemsControl x:Name="pointsCanvas" ScrollViewer.VerticalScrollBarVisibility="Disabled" RenderTransformOrigin="0.5,0.5" 
+                                  ItemsSource="{Binding Path=SelectedMeridian.Points}"
+                                  RenderTransform="{Binding RenderTransform, ElementName=imageFrame}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                                                
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Ellipse Width="{Binding ActualHeight, RelativeSource={RelativeSource Self}}"
+                                         RenderTransform="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource EllipseOffsetConverter}}"
+                                         MouseUp="pointEllipse_MouseUp"
+                                         ui:ImagePanelProperties.ActualMeridian="{Binding DataContext.SelectedMeridian, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:HandImagePanel}}}"
+                                         ui:ImagePanelProperties.ActualPoint="{Binding}">
+                                    <Ellipse.Height>
+                                        <Binding Path="RenderTransform"
+                                                 ElementName="imageFrame"
+                                                 Converter="{StaticResource EllipseSizeConverter}"/>
+                                    </Ellipse.Height>
+                                    <Ellipse.Visibility>
+                                        <MultiBinding Converter="{StaticResource EllipseVisibilityConverter}">
+                                            <Binding Path="ImageIndex"/>
+                                            <Binding Path="DataContext.SelectedMeridian.SelectedPoint.ImageIndex" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:HandImagePanel}}"/>
+                                        </MultiBinding>
+                                    </Ellipse.Visibility>
+                                    <Ellipse.Margin>
+                                        <MultiBinding Converter="{StaticResource PointToEllipseConv}">
+                                            <Binding Path="X"/>
+                                            <Binding Path="Y"/>
+                                            <Binding Path="AltX"/>
+                                            <Binding Path="AltY"/>
+                                            <Binding Path="ImageIndex"/>
+                                            <Binding Path="DataContext.SelectedMeridian.SelectedPoint.ImageIndex" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:HandImagePanel}}"/>
+                                        </MultiBinding>
+                                    </Ellipse.Margin>
+                                    <Ellipse.Fill>
+                                        <MultiBinding Converter="{StaticResource EllipseFillConverter}">
+                                            <Binding />
+                                            <Binding Path="DataContext.SelectedMeridian.SelectedPoint" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:HandImagePanel}}"/>
+                                        </MultiBinding>
+                                    </Ellipse.Fill>
+                                    <Ellipse.ToolTip>
+                                        <MultiBinding Converter="{StaticResource EllipseToolTipConverter}">
+                                            <Binding />
+                                            <Binding Path="BodySide" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:HandImagePanel}}"/>
+                                        </MultiBinding>
+                                    </Ellipse.ToolTip>
+                                </Ellipse>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                        
+                        <ItemsControl.Visibility>
+                            <MultiBinding Converter="{StaticResource BodySideToVisibilityConv}">
+                                <Binding Path="SelectedSide"/>
+                                <Binding Path="BodySide" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:HandImagePanel}}"/>
+                            </MultiBinding>
+                        </ItemsControl.Visibility>
+                    </ItemsControl>
+                </Grid>
+            </Viewbox>
+        </Grid>
+    </Grid>
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="MouseDown">
+            <ui:SetPropertyAction PropertyName="SelectedSide" TargetObject="{Binding}" PropertyValue="{Binding BodySide, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:HandImagePanel}}}"/>
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
+</UserControl>

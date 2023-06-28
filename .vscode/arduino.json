@@ -1,0 +1,7 @@
+{
+    "port": "COM8",
+    "board": "arduino:avr:pro",
+    "configuration": "cpu=16MHzatmega168",
+    "programmer": "USBasp",
+    "sketch": "ArduinoADC\\Lazarov.ino"
+}

@@ -1,0 +1,171 @@
+﻿<UserControl x:Class="LazarovEAV.UI.MainMenu"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:util="clr-namespace:LazarovEAV.UI.Util" 
+             xmlns:ui="clr-namespace:LazarovEAV.UI" 
+             xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+             mc:Ignorable="d" 
+             d:DesignHeight="1200" d:DesignWidth="728">
+    
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="..\Resources\user_icon.xaml"/>
+                <ResourceDictionary Source="..\Resources\styles.xaml"/>
+                <ResourceDictionary Source="..\Resources\widget_styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <Style x:Key="MenuSeparatorStyle" TargetType="{x:Type Rectangle}">
+                <Setter Property="Height" Value="2"/>
+                <Setter Property="Margin" Value="10,7,10,5"/>
+                <Setter Property="StrokeThickness" Value="0"/>
+                <Setter Property="Rectangle.Fill">
+                    <Setter.Value>
+                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                            <GradientStop Color="#FFB4B4B4"/>
+                            <GradientStop Color="#FFF3F3F3" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+        </ResourceDictionary>
+    </UserControl.Resources>
+    
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid x:Name="backgroundOverlay" Grid.ColumnSpan="2" Background="Transparent" Visibility="Visible">
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="MouseDown">
+                    <ui:SetPropertyAction PropertyName="ActiveOverlay" TargetObject="{Binding}" PropertyValue="{x:Null}"/>
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+        </Grid>
+
+        <Grid x:Name="mainMenu" VerticalAlignment="Stretch" Width="285">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="1"/>
+            </Grid.ColumnDefinitions>
+
+            <Rectangle Grid.ColumnSpan="2" Fill="{DynamicResource ResourceKey=WindowBackgroundBrush}"/>
+            <Rectangle Grid.Column="1" Fill="#30000000"/>
+
+            <StackPanel Margin="0,5,0,0">
+                <Button Style="{StaticResource MenuButton}"
+                            HorizontalAlignment="Stretch"
+                            Height="40" Width="Auto"
+                            util:MenuButtonProperties.IconSize="24"
+                            util:MenuButtonProperties.Text="Избор на пациент и час на прегеледа"
+                            Content="Преглед">
+                    <util:MenuButtonProperties.Icon>
+                        <Path Style="{DynamicResource ResourceKey=UserIconStyle}"/>
+                    </util:MenuButtonProperties.Icon>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <ui:SetPropertyAction PropertyName="ActiveOverlay" TargetObject="{Binding}" PropertyValue="{x:Static ui:UiOverlayType.SelectPatient}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+
+                <Rectangle Style="{StaticResource MenuSeparatorStyle}"/>
+
+                <Button Style="{StaticResource MenuButton}"
+                            HorizontalAlignment="Stretch"
+                            Height="40" Width="Auto"
+                            util:MenuButtonProperties.IconSize="24"
+                            util:MenuButtonProperties.Text="Базово измерване по меридиани"
+                            Content="Диагностика"
+                            IsEnabled="{Binding HasActivePatient, RelativeSource={RelativeSource FindAncestor,AncestorType={x:Type ui:MainMenu}}}"
+                        >
+                    <util:MenuButtonProperties.Icon>
+                        <Path Style="{DynamicResource ResourceKey=DiagIconStyle}"/>
+                    </util:MenuButtonProperties.Icon>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <ui:SetPropertyAction PropertyName="ActivePage" TargetObject="{Binding}" PropertyValue="{x:Static ui:UiPageType.DiagView}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+
+                <Button Style="{StaticResource MenuButton}"
+                            HorizontalAlignment="Stretch"
+                            Height="40" Width="Auto"
+                            util:MenuButtonProperties.IconSize="24"
+                            util:MenuButtonProperties.Text="Измерване с патогени и лекарства"
+                            Content="Тест с препарат"
+                            IsEnabled="{Binding HasActivePatient, RelativeSource={RelativeSource FindAncestor,AncestorType={x:Type ui:MainMenu}}}"
+                        >
+                    <util:MenuButtonProperties.Icon>
+                        <Path Style="{DynamicResource ResourceKey=SubstabceTestIconStyle}"/>
+                    </util:MenuButtonProperties.Icon>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <ui:SetPropertyAction PropertyName="ActivePage" TargetObject="{Binding}" PropertyValue="{x:Static ui:UiPageType.SubstanceTest}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+
+                <Rectangle Style="{StaticResource MenuSeparatorStyle}"/>
+
+                <Button Style="{StaticResource MenuButton}"
+                            HorizontalAlignment="Stretch"
+                            Height="40" Width="Auto"
+                            util:MenuButtonProperties.IconSize="24"
+                            util:MenuButtonProperties.Text="Списък с пациенти"
+                            Content="Пациенти">
+                    <util:MenuButtonProperties.Icon>
+                        <Path Style="{DynamicResource ResourceKey=PatientsIconStyle}"/>
+                    </util:MenuButtonProperties.Icon>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <ui:SetPropertyAction PropertyName="ActivePage" TargetObject="{Binding}" PropertyValue="{x:Static ui:UiPageType.PatientEditor}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+
+                <Button Style="{StaticResource MenuButton}"
+                            HorizontalAlignment="Stretch"
+                            Height="40" Width="Auto"
+                            util:MenuButtonProperties.IconSize="26"
+                            util:MenuButtonProperties.Text="Списък с патогени и лекарства"
+                            Content="Препарати">
+                    <util:MenuButtonProperties.Icon>
+                        <Path Style="{DynamicResource ResourceKey=PotionsIconStyle}"/>
+                    </util:MenuButtonProperties.Icon>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <ui:SetPropertyAction PropertyName="ActivePage" TargetObject="{Binding}" PropertyValue="{x:Static ui:UiPageType.SubstanceEditor}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+
+                <Rectangle Style="{StaticResource MenuSeparatorStyle}"/>
+
+                <Button Style="{StaticResource MenuButton}"
+                            HorizontalAlignment="Stretch"
+                            Height="40" Width="Auto"
+                            util:MenuButtonProperties.IconSize="24"
+                            util:MenuButtonProperties.Text="Управление на резервни копия на данните"
+                            Content="Архивиране"
+                        >
+                    <util:MenuButtonProperties.Icon>
+                        <Path Style="{DynamicResource ResourceKey=BackupIconStyle}"/>
+                    </util:MenuButtonProperties.Icon>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <ui:SetPropertyAction PropertyName="ActivePage" TargetObject="{Binding}" PropertyValue="{x:Static ui:UiPageType.Backup}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

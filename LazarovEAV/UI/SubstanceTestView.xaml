@@ -1,0 +1,880 @@
+﻿<UserControl
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:util="clr-namespace:LazarovEAV.UI.Util"
+             xmlns:ui="clr-namespace:LazarovEAV.UI" 
+             xmlns:oxy="clr-namespace:OxyPlot.Wpf;assembly=OxyPlot.Wpf"
+             xmlns:vm="clr-namespace:LazarovEAV.ViewModel"
+             xmlns:conf="clr-namespace:LazarovEAV.Config"             
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:diag="clr-namespace:System.Diagnostics;assembly=WindowsBase"
+             x:Class="LazarovEAV.UI.SubstanceTestView"             
+             mc:Ignorable="d"  
+             d:DesignHeight="570" d:DesignWidth="1024" Focusable="True" DataContextChanged="UserControl_DataContextChanged"
+             >
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="..\Resources\user_icon.xaml"/>
+                <ResourceDictionary Source="..\Resources\editor_icons.xaml"/>
+                <ResourceDictionary Source="..\Resources\styles.xaml"/>
+                <ResourceDictionary Source="..\Resources\widget_styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <LinearGradientBrush x:Key="GraphBackgroundBrush" EndPoint="0.5,1" StartPoint="0.5,0">
+                <GradientStop Color="Red" Offset="0"/>
+                <GradientStop Color="#B20000FF" Offset="1"/>
+                <GradientStop Color="Lime" Offset="0.586"/>
+                <GradientStop Color="#B2FFFF00" Offset="0.227"/>
+                <GradientStop Color="#B2FF0000" Offset="0.096"/>
+                <GradientStop Color="Lime" Offset="0.486"/>
+                <GradientStop Color="#B2FFFF00" Offset="0.334"/>
+                <GradientStop Color="#B20000FF" Offset="0.818"/>
+                <GradientStop Color="Cyan" Offset="0.67"/>
+                <GradientStop Color="Cyan" Offset="0.691"/>
+            </LinearGradientBrush>
+            
+            <Style x:Key="ListBoxAltItemStyle" TargetType="{x:Type ListBoxItem}">
+                <Setter Property="Background" Value="White" />
+                <EventSetter Event="PreviewMouseRightButtonDown" Handler="ListBoxItem_PreviewMouseRightButtonDown" />                
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                            <Grid>
+                                <Border Background="{TemplateBinding Background}" />
+                                <Border x:Name="bgOverlay" Background="{x:Null}" />
+                                <ContentPresenter Margin="5,2,5,2"/>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <MultiTrigger>
+                                    <MultiTrigger.Conditions>
+                                        <Condition Property="IsMouseOver" Value="True" />
+                                        <Condition Property="IsSelected" Value="False"/>
+                                    </MultiTrigger.Conditions>
+                                    <Setter Property="Background" Value="#32C8C800" TargetName="bgOverlay"/>
+                                </MultiTrigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#32FFFF00" TargetName="bgOverlay"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+
+                <Style.Triggers>
+                    <Trigger Property="ItemsControl.AlternationIndex" Value="0">
+                        <Setter Property="Background" Value="#00000000"></Setter>
+                    </Trigger>
+                    <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                        <Setter Property="Background" Value="#0A000000"></Setter>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style x:Key="watermarkLabel"  TargetType="{x:Type Label}">
+                <Setter Property="HorizontalAlignment" Value="Center" />
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="FontSize" Value="140"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Foreground" Value="Black"/>
+            </Style>
+
+            <Style x:Key="Toolbox_ListBoxItem" TargetType="{x:Type ListBoxItem}">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                            <ContentPresenter  Margin="0,2,0,2"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+
+
+            <ui:SlotPositionAxisConverter x:Key="SlotPositionAxisConverter" />
+            <ui:SlotAxisConverter x:Key="SlotAxisConverter" />
+            <ui:SlotPositionToSubstanceIndexConverter x:Key="SlotPositionToSubstanceIndexConverter" />
+            <ui:SelectedSideInverseConverter x:Key="SelectedSideInverseConverter" />
+            <ui:SizeConverter x:Key="SizeConverter" />
+            <ui:SlotAnnotationConcatConverter x:Key="SlotAnnotationConcatConverter" />
+            <ui:SelectedSlotToVisibilityConverter x:Key="SelectedSlotToVisibilityConverter" />
+            <ui:TestTablePositionToIndexConverter x:Key="TestTablePositionToIndexConverter" />
+            <ui:MeridianAxisConverter x:Key="MeridianAxisConverter"/>
+            <ui:ResultDeviationToTextConverter x:Key="ResultDeviationToTextConverter"/>
+            <ui:ResultDeviationToColorConverter x:Key="ResultDeviationToColorConverter"/>
+            <ui:ObjectReferenceToBoolConverter x:Key="ObjectReferenceToBoolConverter"/>
+            <ui:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+            <ui:SelectedTableToIsCheckedConverter x:Key="SelectedTableToIsCheckedConverter"/>
+            <ui:HoverSlotToAnnotationPositionConverter x:Key="HoverSlotToAnnotationPositionConverter"/>
+            <ui:SubstanceToolTipConverter x:Key="SubstanceToolTipConverter"/>
+
+
+
+            <Storyboard x:Key="selectSideStoryboard" RepeatBehavior="Forever">
+                <DoubleAnimation Storyboard.TargetName="selectSideArrow" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" 
+                                 To="0" Duration="00:00:00.700" />
+            </Storyboard>
+
+            <Path x:Key="SubstanceIcon" Style="{StaticResource SubstancePathStyle}" Fill="{Binding Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ContentControl}}}"/>
+
+            <sys:Int32 x:Key="tableIndexA">0</sys:Int32>
+            <sys:Int32 x:Key="tableIndexB">1</sys:Int32>
+            <sys:Int32 x:Key="tableIndexC">2</sys:Int32>
+            <sys:Int32 x:Key="tableIndexD">3</sys:Int32>
+            
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <UserControl.Triggers>
+        <EventTrigger RoutedEvent="Loaded">
+            <EventTrigger.Actions>
+                <BeginStoryboard Storyboard="{StaticResource selectSideStoryboard}"/>
+            </EventTrigger.Actions>
+        </EventTrigger>
+    </UserControl.Triggers>
+
+    <UserControl.DataContext>
+        <vm:SubstanceTestViewModel/>
+    </UserControl.DataContext>
+    
+    <Grid>
+        <Grid Background="{DynamicResource ResourceKey=ClientAreaBrush}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="4*"/>
+                <RowDefinition Height="3*"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="4*"/>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="4*"/>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="4*"/>
+            </Grid.ColumnDefinitions>
+
+            <ui:HandImagePanel Margin="0" Grid.Column="0" Width="Auto" Height="Auto" BodySide="{Binding SelectedSide}"/>
+        
+            <Grid x:Name="plotView" Grid.Row="1" Grid.ColumnSpan="4">
+                <Grid Opacity="0.05" Margin="10,0,10,38">
+                    <Label Style="{StaticResource watermarkLabel}" Content="{Binding TestTable.Name}"/>
+                </Grid>
+
+                <oxy:Plot x:Name="plot" Grid.Row="1" Background="Transparent"
+				    PlotAreaBorderThickness="1" Padding="0" IsLegendVisible="False" IsManipulationEnabled="False" Margin="10,8,10,12" DisconnectCanvasWhileUpdating="True" RenderTransformOrigin="0,0" PlotAreaBackground="#00000000">
+                    <oxy:Plot.Axes>
+                        <oxy:CategoryAxis 
+                            Key="CategoryAxis"
+                            Position="Bottom" 
+                            Minimum="-0.5"
+                            Maximum="{Binding Source={x:Static conf:AppConfig.SUBSTANCE_TEST_GRAPH_POSITIONS}, Converter={StaticResource MeridianAxisConverter}}"
+						    IsTickCentered="False" FontSize="10" MajorTickSize="0" MajorGridlineThickness="0" IsZoomEnabled="False" IsPanEnabled="False" Visibility="Visible">
+                        </oxy:CategoryAxis>
+
+                        <oxy:LinearAxis MajorGridlineStyle="Solid" MinorGridlineStyle="Dot" Position="Left" Minimum="0" Maximum="100"
+						    MinorTickSize="5" MajorTickSize="10" FontSize="10" MajorGridlineThickness="1" MinorGridlineThickness="1"
+						    MajorStep="10" MinorStep="5" IsZoomEnabled="False" IsPanEnabled="False"
+                            MajorGridlineColor="#FFAAAAAA"
+                            MinorGridlineColor="#FFAAAAAA"/>
+
+                        <oxy:LinearAxis MajorGridlineStyle="Solid" MinorGridlineStyle="Dash" Position="Right" Minimum="0" Maximum="100"
+						    MinorTickSize="5" MajorTickSize="10" FontSize="10" MajorGridlineThickness="1" MinorGridlineThickness="1"
+						    MajorStep="10" MinorStep="5" IsZoomEnabled="False" IsPanEnabled="False"
+                            LabelFormatter="{Binding RightAxisLabelFormatterFunc, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}"
+                            MajorGridlineColor="#00000000"
+                            MinorGridlineColor="#00000000"/>
+
+                        <oxy:LinearAxis Position="Bottom" Minimum="0" Maximum="{x:Static conf:AppConfig.SUBSTANCE_TEST_GRAPH_POSITIONS}" 
+						    MajorGridlineStyle="Solid"
+						    MinorGridlineStyle="Solid"
+						    MajorGridlineColor="#FF555555"
+						    MinorTickSize="0" MajorTickSize="10" FontSize="0.1" 
+						    MajorGridlineThickness="1" 
+						    MinorGridlineThickness="1"
+						    MajorStep="{x:Static conf:AppConfig.SUBSTANCE_TEST_SLOT_POSITIONS}" MinorStep="1" 
+						    IsZoomEnabled="False" IsPanEnabled="False"/>
+                    </oxy:Plot.Axes>
+                    
+                    <oxy:Plot.Annotations>
+                        <oxy:RectangleAnnotation MinimumY="{x:Static conf:AppConfig.EAV_WINDOW_BEGIN}" 
+						    MaximumY="{x:Static conf:AppConfig.EAV_WINDOW_END}" 
+						    Layer="BelowAxes" 
+						    Fill="{Binding GraphCorridorColor, Source={x:Static conf:UiConfig.Instance}}"/>
+                        <oxy:RectangleAnnotation MinimumY="0" MaximumY="100"
+                            MinimumX="{Binding Path=SelectedSlotIndex, Converter={StaticResource SlotAxisConverter}}"
+                            MaximumX="{Binding Path=SelectedSlotIndex, Converter={StaticResource SlotAxisConverter}, ConverterParameter={x:Static conf:AppConfig.SUBSTANCE_TEST_SLOT_POSITIONS}}"                                             
+						    Layer="BelowSeries"
+						    Fill="{Binding GraphSelectionColor, Source={x:Static conf:UiConfig.Instance}}"/>
+                        <oxy:RectangleAnnotation MinimumY="0" MaximumY="100" 
+						    Layer="BelowSeries"
+						    Fill="{Binding GraphSubSelectionColor, Source={x:Static conf:UiConfig.Instance}}">
+                            <oxy:RectangleAnnotation.MinimumX>
+                                <MultiBinding Converter="{StaticResource SlotPositionAxisConverter}">
+                                    <Binding Path="SelectedSlotIndex"/>
+                                    <Binding Path="SelectedSlot.SelectedPosition"/>
+                                </MultiBinding>
+                            </oxy:RectangleAnnotation.MinimumX>
+                            <oxy:RectangleAnnotation.MaximumX>
+                                <MultiBinding Converter="{StaticResource SlotPositionAxisConverter}" ConverterParameter="0.5">
+                                    <Binding Path="SelectedSlotIndex"/>
+                                    <Binding Path="SelectedSlot.SelectedPosition"/>
+                                </MultiBinding>
+                            </oxy:RectangleAnnotation.MaximumX>
+                        </oxy:RectangleAnnotation>
+
+                        <oxy:TextAnnotation Stroke="#00000000" 
+                                            Layer="BelowSeries"
+                                            HorizontalAlignment="Center"
+                                            TextPosition="{Binding AnnotationPosition[0], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}"
+                                            >
+                            <oxy:TextAnnotation.Text>
+                                <MultiBinding Converter="{StaticResource SlotAnnotationConcatConverter}">
+                                    <Binding Path="Slots[0].SelectedMeridian.Name"/>
+                                    <Binding Path="Slots[0].SelectedPoint.Name"/>
+                                    <Binding Path="Slots[0].SelectedSide"/>
+                                </MultiBinding>
+                            </oxy:TextAnnotation.Text>
+                        </oxy:TextAnnotation>
+                    
+                        <oxy:TextAnnotation Stroke="#00000000" 
+                                            Layer="BelowSeries"
+                                            HorizontalAlignment="Center"
+                                            TextPosition="{Binding AnnotationPosition[1], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}"
+                                            >
+                            <oxy:TextAnnotation.Text>
+                                <MultiBinding Converter="{StaticResource SlotAnnotationConcatConverter}">
+                                    <Binding Path="Slots[1].SelectedMeridian.Name"/>
+                                    <Binding Path="Slots[1].SelectedPoint.Name"/>
+                                    <Binding Path="Slots[1].SelectedSide"/>
+                                </MultiBinding>
+                            </oxy:TextAnnotation.Text>
+                        </oxy:TextAnnotation>
+                    
+                        <oxy:TextAnnotation Stroke="#00000000" 
+                                            Layer="BelowSeries"
+                                            HorizontalAlignment="Center"
+                                            TextPosition="{Binding AnnotationPosition[2], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}"
+                                            >
+                            <oxy:TextAnnotation.Text>
+                                <MultiBinding Converter="{StaticResource SlotAnnotationConcatConverter}">
+                                    <Binding Path="Slots[2].SelectedMeridian.Name"/>
+                                    <Binding Path="Slots[2].SelectedPoint.Name"/>
+                                    <Binding Path="Slots[2].SelectedSide"/>
+                                </MultiBinding>
+                            </oxy:TextAnnotation.Text>
+                        </oxy:TextAnnotation>
+                    
+                        <oxy:TextAnnotation Stroke="#00000000" 
+                                            Layer="BelowSeries"
+                                            HorizontalAlignment="Center"
+                                            TextPosition="{Binding AnnotationPosition[3], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}"
+                                            >
+                            <oxy:TextAnnotation.Text>
+                                <MultiBinding Converter="{StaticResource SlotAnnotationConcatConverter}">
+                                    <Binding Path="Slots[3].SelectedMeridian.Name"/>
+                                    <Binding Path="Slots[3].SelectedPoint.Name"/>
+                                    <Binding Path="Slots[3].SelectedSide"/>
+                                </MultiBinding>
+                            </oxy:TextAnnotation.Text>
+                        </oxy:TextAnnotation>
+                    
+                        <oxy:TextAnnotation Stroke="#00000000" 
+                                            Layer="BelowSeries"
+                                            HorizontalAlignment="Center"
+                                            TextPosition="{Binding AnnotationPosition[4], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}"
+                                            >
+                            <oxy:TextAnnotation.Text>
+                                <MultiBinding Converter="{StaticResource SlotAnnotationConcatConverter}">
+                                    <Binding Path="Slots[4].SelectedMeridian.Name"/>
+                                    <Binding Path="Slots[4].SelectedPoint.Name"/>
+                                    <Binding Path="Slots[4].SelectedSide"/>
+                                </MultiBinding>
+                            </oxy:TextAnnotation.Text>
+                        </oxy:TextAnnotation>
+                    
+                        <oxy:TextAnnotation Stroke="#00000000" 
+                                            Layer="BelowSeries"
+                                            HorizontalAlignment="Center"
+                                            Text="{Binding Slots[5].SelectedMeridian.Name}"
+                                            TextPosition="{Binding AnnotationPosition[5], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}"
+                                            >
+                        </oxy:TextAnnotation>
+
+                        <oxy:TextAnnotation Stroke="#00000000" 
+                                            Layer="BelowSeries"
+                                            HorizontalAlignment="Center"
+                                            TextPosition="{Binding AnnotationPosition[6], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}"
+                                            >
+                            <oxy:TextAnnotation.Text>
+                                <MultiBinding Converter="{StaticResource SlotAnnotationConcatConverter}">
+                                    <Binding Path="Slots[5].SelectedPoint.Name"/>
+                                    <Binding Path="Slots[5].SelectedSide"/>
+                                </MultiBinding>
+                            </oxy:TextAnnotation.Text>
+                        </oxy:TextAnnotation>
+
+                    </oxy:Plot.Annotations>
+
+                    <oxy:Plot.Series>
+                        <oxy:ScatterSeries XAxisKey="CategoryAxis" 
+                                       Mapping="{Binding DataMappingFuncSlotResults, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}"
+                                       MarkerType="Circle" MarkerFill="{Binding NormalDataColor, Source={x:Static conf:UiConfig.Instance}}"
+                                       MarkerSize="{Binding ActualWidth, Converter={StaticResource SizeConverter}, ConverterParameter=212, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type oxy:Plot}}}"
+                                       ItemsSource="{Binding SlotResults}"
+                                       >
+                        </oxy:ScatterSeries>
+
+                        <oxy:ScatterSeries XAxisKey="CategoryAxis" 
+                                       Mapping="{Binding DataMappingFuncSlotResults, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}"
+                                       MarkerType="Circle" MarkerFill="{Binding BaseDataColor, Source={x:Static conf:UiConfig.Instance}}"
+                                       MarkerSize="{Binding ActualWidth, Converter={StaticResource SizeConverter}, ConverterParameter=212, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type oxy:Plot}}}"
+                                       ItemsSource="{Binding BaseResults, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}"
+                                       >
+                        </oxy:ScatterSeries>
+
+                        <oxy:ScatterSeries XAxisKey="CategoryAxis" 
+                                       Mapping="{Binding DataMappingFuncSlotResults, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}"
+                                       MarkerType="Circle" MarkerFill="{Binding SelectedDataColor, Source={x:Static conf:UiConfig.Instance}}"
+                                       MarkerSize="{Binding ActualWidth, Converter={StaticResource SizeConverter}, ConverterParameter=212, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type oxy:Plot}}}"
+                                       ItemsSource="{Binding SelectedResults, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}"
+                                       >
+                        </oxy:ScatterSeries>
+                    </oxy:Plot.Series>
+
+                </oxy:Plot>
+            </Grid>
+
+            <Grid Grid.Row="1" Grid.Column="4" Margin="0">
+                <Rectangle Margin="3,8,33,28" Grid.Row="0" Opacity="{Binding LiveGraphBackgroundOpacity, Source={x:Static conf:UiConfig.Instance}}" StrokeThickness="0" Fill="{StaticResource GraphBackgroundBrush}"/>
+                <Rectangle Margin="3,8,33,28" Grid.Row="0" Opacity="{Binding LiveGraphBackgroundDarkenOpacity, Source={x:Static conf:UiConfig.Instance}}" Fill="Black" StrokeThickness="0"/>
+                <oxy:Plot x:Name="pointGraph" Background="Transparent" Margin="3,8,5,12" Grid.Row="0"
+                          PlotAreaBorderThickness="1" Padding="0" IsLegendVisible="False" IsManipulationEnabled="False"
+                              DisconnectCanvasWhileUpdating="True" RenderTransformOrigin="0,0" PlotAreaBackground="#00000000">
+                    <oxy:Plot.Axes>
+                        <oxy:LinearAxis MajorGridlineStyle="Dot" MinorGridlineStyle="Dot" Position="Bottom" Minimum="0" Maximum="6300" 
+									    MinorTickSize="1" MajorGridlineThickness="1" 
+                                        MinorGridlineThickness="0"
+                                        MajorTickSize="2" TickStyle="Inside"
+                                        FontSize="10" 
+									    MajorGridlineColor="#30000000"
+									    MajorStep="1000" MinorStep="500" IsZoomEnabled="False" 
+                                        AxislineStyle="Solid" IsPanEnabled="False" 
+                                        LabelFormatter="{Binding LabelFormatterFunc, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}"
+                                        />
+                        <oxy:LinearAxis MinorGridlineStyle="None" MajorGridlineStyle="None" Minimum="0" Maximum="100" Position="Left" 
+									    MinorTickSize="5" MajorTickSize="10" FontSize="0.01" MajorGridlineThickness="1" MinorGridlineThickness="1"
+									    MajorStep="10" MinorStep="5" IsZoomEnabled="False" IsPanEnabled="False" 
+                                        AxisTitleDistance="0" AxisTickToLabelDistance="-10" AxislineStyle="Solid" 
+                                        TickStyle="Outside" TitleClippingLength="0.01" TitlePosition="0" 
+                                        AxislineThickness="0" AxisDistance="0" ExtraGridlineColor="#33000000"/>
+                        <oxy:LinearAxis MinorGridlineStyle="None" MajorGridlineStyle="Dot" Minimum="0" Maximum="100" Position="Right" 
+									    MinorTickSize="5" MajorTickSize="10" FontSize="10" MajorGridlineThickness="1" MinorGridlineThickness="1"
+									    MajorStep="10" MinorStep="5" IsZoomEnabled="False" IsPanEnabled="False" 
+                                        AxisTitleDistance="0" AxislineStyle="Solid" 
+                                        TickStyle="Outside" TitleClippingLength="0.01" TitlePosition="0" 
+                                        AxislineThickness="0" AxisDistance="0" />
+                    </oxy:Plot.Axes>
+                    <oxy:Plot.Annotations>
+                        <oxy:RectangleAnnotation MinimumY="{x:Static conf:AppConfig.EAV_WINDOW_BEGIN}" 
+									    MaximumY="{x:Static conf:AppConfig.EAV_WINDOW_END}" 
+									    Layer="BelowAxes"
+									    Fill="{Binding GraphCorridorColor, Source={x:Static conf:UiConfig.Instance}}"/>
+                        
+                        <oxy:RectangleAnnotation Text="{Binding ActualPointResults, Converter={StaticResource ResultDeviationToTextConverter}, ConverterParameter=1}"
+                                                TextColor="{Binding ActualPointResults, Converter={StaticResource ResultDeviationToColorConverter}}" 
+                                                Fill="{Binding ActualPointResults, Converter={StaticResource ResultDeviationToColorConverter}, ConverterParameter=1}"
+                                                MinimumX="4700" MinimumY="90"
+                                                MaximumX="6300" MaximumY="98"                                                
+                                                />
+
+                    </oxy:Plot.Annotations>
+                    <oxy:Plot.Series>
+                        <oxy:LineSeries ItemsSource="{Binding PointResults.ResultData}" 
+								        Mapping="{Binding DataMappingFuncLine, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}" 
+								        LineStyle="Solid" StrokeThickness="{Binding LiveGraphLineThickness, Source={x:Static conf:UiConfig.Instance}}" Color="{Binding NormalDataColor, Source={x:Static conf:UiConfig.Instance}}"/>
+                        <oxy:ScatterSeries ItemsSource="{Binding PointResults.ControlPoints}" 
+								        Mapping="{Binding DataMappingFuncControl, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}" 
+								        MarkerFill="{Binding GraphResultDataRangeMarkerColor, Source={x:Static conf:UiConfig.Instance}}" MarkerSize="{Binding GraphResultDataRangeMarkerSize, Source={x:Static conf:UiConfig.Instance}}" MarkerType="Circle"/>
+                    </oxy:Plot.Series>
+                </oxy:Plot>
+            </Grid>
+
+            <Grid Grid.Column="5" Margin="0,0,30,1">
+
+                <Grid Opacity="0.015" Margin="10,0,10,38" >
+                    <Label Style="{StaticResource watermarkLabel}" Content="{Binding TestTable.Name}"/>
+                </Grid>
+
+                <!--                                    -->
+                <!-- ListBox for single substance tests -->
+                <!--                                    -->
+                <ListBox x:Name="testTable1"
+                        FontSize="16" 
+                        VerticalAlignment="Center" 
+                        Background="Transparent" 
+                        BorderBrush="#0A000000"
+                        BorderThickness="1"                         
+                        Padding="0"
+                        AlternationCount="2" 
+                        SelectionMode="Single"
+                        ItemsSource="{Binding TestTable.Positions}"
+                        SelectedIndex="{Binding Path=SelectedSlot.SelectedPosition, Mode=TwoWay, Converter={StaticResource SlotPositionToSubstanceIndexConverter}}"
+                        Visibility="{Binding SelectedSlotIndex, Converter={StaticResource SelectedSlotToVisibilityConverter}}"
+                        ItemContainerStyle="{StaticResource ListBoxAltItemStyle}"
+                        SnapsToDevicePixels="True"
+                        >
+                    <ListBox.Template>
+                        <ControlTemplate TargetType="{x:Type ListBox}">
+                            <Grid>
+                                <Border x:Name="Bd" BorderThickness="{TemplateBinding BorderThickness}" Padding="0" CornerRadius="2" BorderBrush="{TemplateBinding BorderBrush}" Background="{TemplateBinding Background}">
+                                    <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                </Border>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsEnabled" Value="false">
+                                    <Setter Property="Background" TargetName="Bd" Value="Gray"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </ListBox.Template>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Width="Auto" 
+                                HorizontalAlignment="Stretch" 
+                                Height="24">
+
+                                <Grid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Избери нов" Click="selectSubstanceMenuItem_Click" Tag="{Binding}">
+                                            <MenuItem.Icon>
+                                                <Path Style="{StaticResource PencilPathStyle}" Fill="Gray" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="Премахни" Click="deleteSubstanceMenuItem_Click" Tag="{Binding}"
+                                                IsEnabled="{Binding Substance, Converter={StaticResource ObjectReferenceToBoolConverter}}">
+                                            <MenuItem.Icon>
+                                                <Path Style="{StaticResource TrashBinPathStyle}" Fill="Gray" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                    </ContextMenu>
+                                </Grid.ContextMenu>
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Grid Margin="0" HorizontalAlignment="Stretch">
+
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="1*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Label Margin="0,0,5,0" Padding="0" FontWeight="Medium">
+                                        <MultiBinding Converter="{StaticResource TestTablePositionToIndexConverter}">
+                                            <Binding Path="DataContext.TestTable.Positions" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}" />
+                                            <Binding Path="Content" RelativeSource="{RelativeSource TemplatedParent}"/>
+                                        </MultiBinding>
+                                    </Label>
+
+                                    <Grid Name="substanceLabel"
+                                            Grid.Column="1"
+                                            Margin="0" 
+                                            HorizontalAlignment="Stretch" 
+                                            Visibility="Visible">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="1*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Margin="0" Padding="0" Text="{Binding Substance.Name}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" 
+                                                   ToolTip="{Binding Substance, Mode=OneWay, Converter={StaticResource SubstanceToolTipConverter}}" 
+                                                   ToolTipService.InitialShowDelay="0"
+                                                   ToolTipService.ShowDuration="3600000"
+                                                   ToolTipService.BetweenShowDelay="3600000" 
+                                                   />
+
+                                        <Label Margin="5,0,0,0" Padding="0" Grid.Column="2" Content="{Binding Substance.Quantity}" Foreground="Gray"/>
+                                    </Grid>
+                                </Grid>
+
+                                <Grid Name="toolContainer" 
+                                    Grid.Column="1"
+                                    Visibility="Collapsed" 
+                                    HorizontalAlignment="Right"
+                                    Width="Auto"
+                                    Background="{x:Null}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Name="editButton"
+                                            Style="{StaticResource ToolbarButton}"      
+                                            Margin="0"
+                                            util:RoundButtonProperties.IconSize="16"
+                                            Cursor="Hand"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Stretch"
+                                            Click="selectSubstance_Click"
+                                            Visibility="Visible"
+                                            >
+                                            <util:RoundButtonProperties.Icon>
+                                                <Path Style="{StaticResource PencilPathStyle}" Fill="Gray" />
+                                            </util:RoundButtonProperties.Icon>
+                                        </Button>
+                                        <Button Name="deleteButton"
+                                            Style="{StaticResource ToolbarButton}"      
+                                            Margin="0"
+                                            util:RoundButtonProperties.IconSize="16"
+                                            Cursor="Hand"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Stretch"
+                                            Command="{Binding DataContext.RemoveSubstanceCommand, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}"
+                                            Visibility="Visible"
+                                            >
+                                            <util:RoundButtonProperties.Icon>
+                                                <Path Style="{StaticResource TrashBinPathStyle}" Fill="Gray" />
+                                            </util:RoundButtonProperties.Icon>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding Path=IsSelected, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" TargetName="toolContainer"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Substance}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed" TargetName="deleteButton"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsEditing, RelativeSource={RelativeSource AncestorType={x:Type ui:SubstanceTestView}}}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed" TargetName="editButton"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsEditing, RelativeSource={RelativeSource AncestorType={x:Type ui:SubstanceTestView}}}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed" TargetName="deleteButton"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!--                                  -->
+                <!-- ListBox for muti substance tests -->
+                <!--                                  -->
+                <ListBox x:Name="mixTestsTable"
+                        FontSize="16" 
+                        VerticalAlignment="Center" 
+                        Background="Transparent" 
+                        BorderBrush="#0A000000"
+                        BorderThickness="1"                         
+                        Padding="0"
+                        AlternationCount="2" 
+                        SelectionMode="Multiple"
+                        ItemsSource="{Binding TestTable.Positions}"
+                        Visibility="{Binding SelectedSlotIndex, Converter={StaticResource SelectedSlotToVisibilityConverter}, ConverterParameter=1}"
+                        SelectionChanged="mixTestsTable_SelectionChanged"
+                        ItemContainerStyle="{StaticResource ListBoxAltItemStyle}"
+                        SnapsToDevicePixels="True"
+                        >
+
+                    <ListBox.Template>
+                        <ControlTemplate TargetType="{x:Type ListBox}">
+                            <Grid>
+                                <Border x:Name="Bd" BorderThickness="{TemplateBinding BorderThickness}" Padding="0" CornerRadius="2" BorderBrush="{TemplateBinding BorderBrush}" Background="{TemplateBinding Background}">
+                                    <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                </Border>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsEnabled" Value="false">
+                                    <Setter Property="Background" TargetName="Bd" Value="Gray"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </ListBox.Template>
+
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Width="Auto" 
+                                HorizontalAlignment="Stretch" 
+                                Height="24">
+
+                                <Grid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Избери нов" Click="selectSubstanceMenuItem_Click" Tag="{Binding}">
+                                            <MenuItem.Icon>
+                                                <Path Style="{StaticResource PencilPathStyle}" Fill="Gray" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="Премахни" Click="deleteSubstanceMenuItem_Click" Tag="{Binding}"
+                                                IsEnabled="{Binding Substance, Converter={StaticResource ObjectReferenceToBoolConverter}}">
+                                            <MenuItem.Icon>
+                                                <Path Style="{StaticResource TrashBinPathStyle}" Fill="Gray" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                    </ContextMenu>
+                                </Grid.ContextMenu>
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="1*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox VerticalAlignment="Center" Margin="0,0,5,0"
+                                    IsChecked="{Binding IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType=ListBoxItem}, Mode=TwoWay}"
+                                    IsEnabled="{Binding DataContext.Slots[5].SelectedPosition, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}"/>
+
+                                <Label Margin="0,0,5,0" Padding="0"
+                                    Grid.Column="1" FontWeight="Medium"
+                                    >
+                                    <MultiBinding Converter="{StaticResource TestTablePositionToIndexConverter}">
+                                        <Binding Path="DataContext.TestTable.Positions" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}" />
+                                        <Binding Path="Content" RelativeSource="{RelativeSource TemplatedParent}"/>
+                                    </MultiBinding>
+                                </Label>
+
+                                <Grid Name="substanceLabel"
+                                    Grid.Column="2"
+                                    Margin="0" 
+                                    HorizontalAlignment="Stretch" 
+                                    Visibility="Visible">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Margin="0" Padding="0" Text="{Binding Substance.Name}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" 
+                                               ToolTip="{Binding Substance, Mode=OneWay, Converter={StaticResource SubstanceToolTipConverter}}"
+                                               ToolTipService.InitialShowDelay="0"
+                                               ToolTipService.ShowDuration="3600000"
+                                               ToolTipService.BetweenShowDelay="3600000" />
+                                    <Label Margin="5,0,0,0" Padding="0" Grid.Column="2" Content="{Binding Substance.Quantity}" Foreground="Gray"/>
+                                </Grid>
+
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*"/>
+                        <RowDefinition Height="{Binding ElementName=testTable1, Path=ActualHeight}"/>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+
+                    <ItemsControl Grid.Row="2" ItemsSource="{Binding TestTableList}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <RadioButton Style="{StaticResource RoundTextIconRadioButton}"
+                                        util:RoundButtonProperties.FontSize="18"
+                                        util:RoundButtonProperties.IconMargin="1,3,0,0"
+                                        util:RoundButtonProperties.TextIcon="{Binding Name}"
+                                        Foreground="Gray" GroupName="TableSelection" 
+                                        Command="{Binding DataContext.SelectTableCommand, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}" CommandParameter="{Binding}">
+                                    <RadioButton.IsChecked>
+                                        <MultiBinding Converter="{StaticResource SelectedTableToIsCheckedConverter}" Mode="OneWay">
+                                            <Binding Path="DataContext.TestTable" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}" />
+                                            <Binding Path="Content" RelativeSource="{RelativeSource TemplatedParent}"/>
+                                        </MultiBinding>
+                                    </RadioButton.IsChecked>
+                                </RadioButton>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+            </Grid>
+
+            <ui:LiveViewPanel Grid.Column="1" Grid.ColumnSpan="3" Focusable="True"
+                              FilteredSample="{Binding EavDevice.FilteredSample, Mode=OneWay}"
+                              LiveSample="{Binding EavDevice.LiveSample, Mode=OneWay}"
+                              TestResults="{Binding EavDevice.TestResults, Mode=OneWay}"
+                              Meridians="{Binding Meridians}"
+                              SelectedMeridian="{Binding SelectedMeridian, Mode=TwoWay}" 
+                              Status="{Binding Status, Mode=OneWay}" 
+                              />
+
+            <Grid Grid.Column="1" Grid.ColumnSpan="3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="4*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+            
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="4*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" Orientation="Vertical">
+
+                        <Button Visibility="Visible" Foreground="Gray"
+                            Width="Auto" 
+                            Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}}" 
+                            Style="{StaticResource ToolboxButton}"
+                            Command="{Binding ToogleZoomCommand}"
+                            Margin="0,0,0,5"
+                            >
+                    
+                            <ContentControl 
+                                Width="{Binding ActualWidth, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Button}, Converter={StaticResource SizeConverter}, ConverterParameter=3}"
+                                Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}}"
+                                Content="{StaticResource ResourceKey=MagnifierIcon}"/>
+                        </Button>
+
+                        <Grid>
+                            <Rectangle 
+                                Width="{Binding ActualWidth, ElementName=selectSide}"
+                                Height="{Binding ActualHeight, ElementName=selectSide}"
+                                RadiusX="10"
+                                RadiusY="10"
+                                >
+
+                                <Rectangle.Style>
+                                    <Style>
+                                        <Setter Property="Rectangle.Fill" Value="#0A000000"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ElementName=selectSide, Path=IsMouseOver}" Value="True">
+                                                <Setter Property="Rectangle.Fill" Value="#15000000" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Rectangle.Style>
+                            </Rectangle>
+
+                            <Rectangle 
+                                HorizontalAlignment="Left"
+                                Width="{Binding ActualWidth, ElementName=selectSide}"
+                                Height="{Binding ActualHeight, ElementName=selectSide, Converter={StaticResource SizeConverter}, ConverterParameter=2}"
+                                >
+
+                                <Rectangle.Style>
+                                    <Style>
+                                        <Setter Property="Rectangle.Fill" Value="#00000000"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ElementName=selectSide, Path=IsMouseOver}" Value="True">
+                                                <Setter Property="Rectangle.Fill" Value="#0A000000" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Rectangle.Style>
+                            </Rectangle>
+
+                            <ui:HandImagePanel x:Name="selectSide"
+                                               Margin="0" Grid.Column="0" 
+                                               Width="Auto"
+                                               HorizontalAlignment="Stretch"
+                                               Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}}" 
+                                               BodySide="{Binding SelectedSide, Converter={StaticResource SelectedSideInverseConverter}}" 
+                                               InactiveOpacity="1.0"
+                                               >
+                            </ui:HandImagePanel>
+                
+                            <Viewbox x:Name="selectSideArrow"
+                                     HorizontalAlignment="Left"
+                                     Margin="5,0,5,0"
+                                     Width="{Binding ActualWidth, ElementName=selectSide, Converter={StaticResource SizeConverter}, ConverterParameter=3}"
+                                     Height="{Binding ActualHeight, ElementName=selectSide, Converter={StaticResource SizeConverter}, ConverterParameter=3}"
+                                     IsHitTestVisible="False"
+                                     >
+                                <Viewbox.RenderTransform>
+                                    <TranslateTransform X="{Binding ActualWidth, ElementName=selectSide, Converter={StaticResource SizeConverter}, ConverterParameter=2}"/>
+                                </Viewbox.RenderTransform>
+
+                                <Path Stretch="None"
+                                      Fill="#15000000" Data="M 50.0, 0.0 L 0, 50 L 50, 100 L 50, 0 z" IsHitTestVisible="False"/>
+                    
+                                <Viewbox.Style>
+                                    <Style>
+                                        <Setter Property="Viewbox.Visibility" Value="Hidden"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ElementName=selectSide, Path=IsMouseOver}" Value="True">
+                                                <Setter Property="Viewbox.Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Viewbox.Style>
+                            </Viewbox>
+        
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Grid.Column="2" Margin="0,8,0,1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="5*"/>
+                    </Grid.ColumnDefinitions>
+
+
+                    <ListBox Grid.Column="1" Name="testTableTools"
+                         FontSize="17.5" 
+                         ScrollViewer.VerticalScrollBarVisibility="Hidden" 
+                         VerticalAlignment="Center" 
+                         Background="{x:Null}" 
+                         BorderBrush="{x:Null}" 
+                         SelectionMode="Single"
+                         ItemsSource="{Binding TestTable.Positions}"
+                         SelectedIndex="{Binding Path=SelectedSlot.SelectedPosition, Mode=OneWay, Converter={StaticResource SlotPositionToSubstanceIndexConverter}}"
+                         ItemContainerStyle="{StaticResource Toolbox_ListBoxItem}"
+                         >
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Height="24">
+                                    <Grid Name="toolContainer" Visibility="Collapsed">
+                                        
+                                        <Button Style="{StaticResource ToolbarButton}"         
+                                                            Margin="0,0,3,0"
+                                                            util:RoundButtonProperties.IconSize="20"
+                                                            Cursor="Hand"
+                                                            Width="32"
+                                                            HorizontalAlignment="Right"
+                                                            VerticalAlignment="Stretch"
+                                                            Click="substanceSelectorApply_Click"
+                                                            >
+                                            <util:RoundButtonProperties.Icon>
+                                                <Path Style="{StaticResource RightArrowPathStyle}" Fill="Gray"/>
+                                            </util:RoundButtonProperties.Icon>
+                                        </Button>
+                                        
+                                    </Grid>
+                                </Grid>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding Path=IsSelected, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" TargetName="toolContainer"/>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                        <ListBox.Template>
+                            <ControlTemplate TargetType="{x:Type ListBox}">
+                                <ItemsPresenter Name="itemsPresenter1" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" Visibility="Visible"/>
+
+                                <ControlTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsEditing, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:SubstanceTestView}}}" Value="False">
+                                        <Setter Property="Visibility" Value="Hidden" TargetName="itemsPresenter1"/>
+                                    </DataTrigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </ListBox.Template>
+                    </ListBox>
+
+                </Grid>
+            </Grid>
+        </Grid>
+
+        <Grid Name="overlay" Visibility="Hidden">
+            <ContentControl Name="overlayContent"/>
+        </Grid>
+    </Grid>
+</UserControl>

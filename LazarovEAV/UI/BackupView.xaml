@@ -1,0 +1,150 @@
+﻿<UserControl x:Class="LazarovEAV.UI.BackupView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ViewModel="clr-namespace:LazarovEAV.ViewModel"
+             xmlns:local="clr-namespace:LazarovEAV.UI"
+             mc:Ignorable="d" 
+             d:DesignHeight="570" d:DesignWidth="1024" Focusable="True">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="..\Resources\styles.xaml"/>
+                <ResourceDictionary Source="..\Resources\user_icon.xaml"/>
+                <ResourceDictionary Source="..\Resources\button_styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <LinearGradientBrush x:Key="GraphBackgroundBrush" EndPoint="0.5,1" StartPoint="0.5,0">
+                <GradientStop Color="Red" Offset="0"/>
+                <GradientStop Color="#B20000FF" Offset="1"/>
+                <GradientStop Color="Lime" Offset="0.586"/>
+                <GradientStop Color="#B2FFFF00" Offset="0.227"/>
+                <GradientStop Color="#B2FF0000" Offset="0.096"/>
+                <GradientStop Color="Lime" Offset="0.486"/>
+                <GradientStop Color="#B2FFFF00" Offset="0.334"/>
+                <GradientStop Color="#B20000FF" Offset="0.818"/>
+                <GradientStop Color="Cyan" Offset="0.67"/>
+                <GradientStop Color="Cyan" Offset="0.691"/>
+            </LinearGradientBrush>
+
+            <Style x:Key="MenuSeparatorStyle" TargetType="{x:Type Rectangle}">
+                <Setter Property="Height" Value="1"/>
+                <Setter Property="Margin" Value="0,0,0,0"/>
+                <Setter Property="StrokeThickness" Value="0"/>
+                <Setter Property="Rectangle.Fill">
+                    <Setter.Value>
+                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                            <GradientStop Color="#FFB4B4B4"/>
+                            <GradientStop Color="#FFF3F3F3" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <local:CompareDbHashConverter x:Key="CompareDbHashConverter"/>
+            <local:ProgressMessageVisibilityConverter x:Key="ProgressMessageVisibilityConverter" />
+
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <UserControl.DataContext>
+        <ViewModel:BackupViewModel/>
+    </UserControl.DataContext>
+
+    <Grid Margin="0" Width="Auto" Height="Auto" Background="{DynamicResource ResourceKey=ClientAreaBrush}">
+
+        <Grid x:Name="backupControlsBox" Margin="50 50 50 50">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="100" />
+                <RowDefinition Height="1*"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Width="260" Height="Auto" VerticalAlignment="Center">
+                <Label FontSize="14">Устройство за архивиране:</Label>
+                <ComboBox ItemsSource="{Binding UsbDrives}" DisplayMemberPath="RootDirectory.FullName" SelectedItem="{Binding SelectedDrive, Mode=TwoWay}"/>
+            </StackPanel>
+
+            <Rectangle Style="{StaticResource MenuSeparatorStyle}" VerticalAlignment="Bottom"/>
+
+            <Grid Grid.Row="1" x:Name="errorMessageOverlay" VerticalAlignment="Bottom">
+                <Label Width="Auto" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Foreground="Red" FontSize="16" Content="{Binding ErrorMessage}"/>
+            </Grid>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center" Margin="0 0 10 0">
+                    <Button Width="160" Height="32" IsEnabled="{Binding BackupEnabled}" Command="{Binding StartBackupCommand}">Архивиране >></Button>
+                </StackPanel>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <Label FontSize="14">Списък с архиви:</Label>
+                    <ListBox x:Name="backupsListBox"  MinHeight="250" ItemsSource="{Binding BackupsList}" SelectedItem="{Binding SelectedBackup, Mode=TwoWay}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Label Margin="0,0,5,0" Padding="0" Grid.Column="1" Content="{Binding DisplayName}">
+                                    <Label.Style>
+                                        <Style TargetType="{x:Type Label}">
+                                            <Setter Property="FontWeight" Value="Normal"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Value="True">
+                                                    <DataTrigger.Binding>
+                                                        <MultiBinding Converter="{StaticResource CompareDbHashConverter}">
+                                                            <Binding Path="Hash"/>
+                                                            <Binding Path="DataContext.DBHash" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type local:BackupView}}" />
+                                                        </MultiBinding>
+                                                    </DataTrigger.Binding>
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Label.Style>
+                                </Label>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <StackPanel Orientation="Horizontal">
+                        <Label>Свободно пространство:</Label>
+                        <Label Content="{Binding DriveFreeSpace}"/>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel  Grid.Column="2" VerticalAlignment="Center" Margin="10 0 0 0">
+                    <Button Width="160" Height="32" IsEnabled="{Binding RestoreEnabled}" Click="Button_Click">>> Възстановяване</Button>
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <Grid x:Name="overlayMessageBox" Visibility="{Binding ProgressMessage, Converter={StaticResource ProgressMessageVisibilityConverter}}">
+            <Grid.Background>
+                <SolidColorBrush Color="Black" Opacity="0.2"/>
+            </Grid.Background>
+            <Label HorizontalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" VerticalAlignment="Center" Background="White" Width="350" Height="80"
+                   BorderBrush="Gray" BorderThickness="1" Content="{Binding ProgressMessage}"/>
+        </Grid>
+
+        <Grid x:Name="overlayConfirmBox" Visibility="Hidden">
+            <Grid.Background>
+                <SolidColorBrush Color="Black" Opacity="0.2"/>
+            </Grid.Background>
+            <Border BorderBrush="Gray" BorderThickness="1" Background="White" Width="420" Height="140">
+                <StackPanel VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0 0 0 0">
+                        <Label Content="Възстановяване на архив" FontSize="14" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0 0 0 20">
+                        <Label Padding="0" VerticalContentAlignment="Center" FontSize="14" Content="{Binding ElementName=backupsListBox, Path=SelectedItem.DisplayName}"/>
+                        <Label Padding="0" VerticalContentAlignment="Center" FontSize="14" Content="?"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Width="100" Height="24" Margin="0 0 10 0" Command="{Binding StartRestoreCommand}" Click="Button_Click_1">Потвръди</Button>
+                        <Button Width="100" Height="24" Click="Button_Click_2">Откажи</Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+    </Grid>
+</UserControl>

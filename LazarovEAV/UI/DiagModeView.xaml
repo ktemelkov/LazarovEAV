@@ -1,0 +1,171 @@
+﻿<UserControl
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:oxy="clr-namespace:OxyPlot.Wpf;assembly=OxyPlot.Wpf"
+             xmlns:ui="clr-namespace:LazarovEAV.UI" 
+             xmlns:ViewModel="clr-namespace:LazarovEAV.ViewModel" 
+             xmlns:util="clr-namespace:LazarovEAV.UI.Util"
+             xmlns:conf="clr-namespace:LazarovEAV.Config"
+             xmlns:OxyPlot="clr-namespace:OxyPlot;assembly=OxyPlot"
+             x:Class="LazarovEAV.UI.DiagModeView" 
+             mc:Ignorable="d" 
+             d:DesignHeight="570" d:DesignWidth="1024" Focusable="True">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="..\Resources\styles.xaml"/>
+                <ResourceDictionary Source="..\Resources\user_icon.xaml"/>
+                <ResourceDictionary Source="..\Resources\button_styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <LinearGradientBrush x:Key="GraphBackgroundBrush" EndPoint="0.5,1" StartPoint="0.5,0">
+                <GradientStop Color="Red" Offset="0"/>
+                <GradientStop Color="#B20000FF" Offset="1"/>
+                <GradientStop Color="Lime" Offset="0.586"/>
+                <GradientStop Color="#B2FFFF00" Offset="0.227"/>
+                <GradientStop Color="#B2FF0000" Offset="0.096"/>
+                <GradientStop Color="Lime" Offset="0.486"/>
+                <GradientStop Color="#B2FFFF00" Offset="0.334"/>
+                <GradientStop Color="#B20000FF" Offset="0.818"/>
+                <GradientStop Color="Cyan" Offset="0.67"/>
+                <GradientStop Color="Cyan" Offset="0.691"/>
+            </LinearGradientBrush>
+
+            <ui:SelectedSideToColumnIndexConverter x:Key="SelectedSideToColumnIndexConverter"/>
+            <ui:ResultDeviationToTextConverter x:Key="ResultDeviationToTextConverter"/>
+            <ui:ResultDeviationToColorConverter x:Key="ResultDeviationToColorConverter"/>
+            
+
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <UserControl.DataContext>
+        <ViewModel:DiagModeViewModel/>
+    </UserControl.DataContext>
+
+    <Grid Margin="0" Width="Auto" Height="Auto" Background="{DynamicResource ResourceKey=ClientAreaBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="12*"/>
+            <RowDefinition Height="9*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="4*"/>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="4*"/>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="4*"/>
+        </Grid.ColumnDefinitions>
+
+        <ui:HandImagePanel Margin="0" Grid.Column="0" Width="Auto" Height="Auto" BodySide="RIGHT"/>
+        <ui:GraphPanel x:Name="rightGraph"
+			Margin="0" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Width="Auto" Height="Auto" BodySide="RIGHT" 
+			SelectedSide="{Binding SelectedSide, Mode=TwoWay}" 
+			SelectedPointIndex="{Binding SelectedMeridian.SelectedPointIndex, Mode=TwoWay}"
+                       />
+
+        <ui:HandImagePanel Margin="0" Grid.Column="4" Width="Auto" Height="Auto" BodySide="LEFT"/>
+        <ui:GraphPanel x:Name="leftGraph"
+			Margin="0" Grid.Row="1" Grid.Column="3" Grid.ColumnSpan="2" Width="Auto" Height="Auto" BodySide="LEFT" 
+			SelectedSide="{Binding SelectedSide, Mode=TwoWay}" 
+			SelectedPointIndex="{Binding SelectedMeridian.SelectedPointIndex, Mode=TwoWay}"
+                       />
+
+        <Grid Grid.Row="1" Grid.Column="2" Margin="0">
+            <Rectangle Margin="3,8,3,28" Grid.Row="0" Opacity="{Binding LiveGraphBackgroundOpacity, Source={x:Static conf:UiConfig.Instance}}" StrokeThickness="0" Fill="{StaticResource GraphBackgroundBrush}"/>
+            <Rectangle Margin="3,8,3,28" Grid.Row="0" Opacity="{Binding LiveGraphBackgroundDarkenOpacity, Source={x:Static conf:UiConfig.Instance}}" Fill="Black" StrokeThickness="0"/>
+            <oxy:Plot x:Name="pointGraph" Background="Transparent" Margin="3,8,3,12" Grid.Row="0"
+				PlotAreaBorderThickness="1" Padding="0" IsLegendVisible="False" IsManipulationEnabled="False"
+				DisconnectCanvasWhileUpdating="True" RenderTransformOrigin="0,0" PlotAreaBackground="#00000000">
+                <oxy:Plot.Axes>
+                    <oxy:LinearAxis Key="TimeAxis" MajorGridlineStyle="Dot" MinorGridlineStyle="Dot" Position="Bottom" Minimum="0" Maximum="6300" 
+						MinorTickSize="1" MajorGridlineThickness="1" 
+						MinorGridlineThickness="0"
+						MajorTickSize="2" TickStyle="Inside"
+						FontSize="10" 
+						MajorGridlineColor="#30000000"
+						MajorStep="1000" MinorStep="500" IsZoomEnabled="False" 
+						AxislineStyle="Solid" IsPanEnabled="False" 
+						LabelFormatter="{Binding LabelFormatterFunc, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:DiagModeView}}}"/>
+                    <oxy:LinearAxis Key="ValueAxisLeft" MinorGridlineStyle="None" MajorGridlineStyle="None" Minimum="0" Maximum="100" Position="Left" 
+						MinorTickSize="5" MajorTickSize="10" FontSize="0.01" MajorGridlineThickness="1" MinorGridlineThickness="1"
+						MajorStep="10" MinorStep="5" IsZoomEnabled="False" IsPanEnabled="False" 
+						AxisTitleDistance="0" AxisTickToLabelDistance="-10" AxislineStyle="Solid" 
+						TickStyle="Outside" TitleClippingLength="0.01" TitlePosition="0" 
+						AxislineThickness="0" AxisDistance="0" ExtraGridlineColor="#33000000"/>
+                    <oxy:LinearAxis Key="ValueAxisRight" MinorGridlineStyle="None" MajorGridlineStyle="Dot" Minimum="0" Maximum="100" Position="Right" 
+						MinorTickSize="5" MajorTickSize="10" FontSize="0.01" MajorGridlineThickness="1" MinorGridlineThickness="1"
+						MajorStep="10" MinorStep="5" IsZoomEnabled="False" IsPanEnabled="False" 
+						AxisTitleDistance="0" AxisTickToLabelDistance="-10" AxislineStyle="Solid" 
+						TickStyle="Outside" TitleClippingLength="0.01" TitlePosition="0" 
+						AxislineThickness="0" AxisDistance="0" ExtraGridlineColor="#33000000"/>
+                </oxy:Plot.Axes>
+                <oxy:Plot.Annotations>
+                    <oxy:RectangleAnnotation MinimumY="{x:Static conf:AppConfig.EAV_WINDOW_BEGIN}" 
+						MaximumY="{x:Static conf:AppConfig.EAV_WINDOW_END}" 
+						Layer="BelowAxes"
+						Fill="{Binding GraphCorridorColor, Source={x:Static conf:UiConfig.Instance}}"/>
+                    
+                    <oxy:RectangleAnnotation Text="{Binding ActualPointResults, Converter={StaticResource ResultDeviationToTextConverter}, ConverterParameter=1}"
+                                                TextColor="{Binding ActualPointResults, Converter={StaticResource ResultDeviationToColorConverter}}" 
+                                                Fill="{Binding ActualPointResults, Converter={StaticResource ResultDeviationToColorConverter}, ConverterParameter=1}"
+                                                MinimumX="4700" MinimumY="90"
+                                                MaximumX="6300" MaximumY="98"                                                
+                                                />
+
+                </oxy:Plot.Annotations>
+                <oxy:LineSeries ItemsSource="{Binding PointResults.ResultData}" 
+					XAxisKey="TimeAxis" YAxisKey="ValueAxisLeft"
+					Mapping="{Binding DataMappingFuncLine, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:DiagModeView}}}" 
+					LineStyle="Solid" StrokeThickness="{Binding LiveGraphLineThickness, Source={x:Static conf:UiConfig.Instance}}" Color="{Binding NormalDataColor, Source={x:Static conf:UiConfig.Instance}}"/>
+                <oxy:ScatterSeries ItemsSource="{Binding PointResults.ControlPoints}" 
+					XAxisKey="TimeAxis" YAxisKey="ValueAxisLeft"
+					Mapping="{Binding DataMappingFuncControl, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:DiagModeView}}}" 
+					MarkerFill="{Binding GraphResultDataRangeMarkerColor, Source={x:Static conf:UiConfig.Instance}}" MarkerSize="{Binding GraphResultDataRangeMarkerSize, Source={x:Static conf:UiConfig.Instance}}" MarkerType="Circle"/>
+            </oxy:Plot>
+        </Grid>
+
+        <ui:LiveViewPanel Grid.Column="1" Grid.ColumnSpan="3" Focusable="True"
+			FilteredSample="{Binding EavDevice.FilteredSample, Mode=OneWay}"
+			LiveSample="{Binding EavDevice.LiveSample, Mode=OneWay}"
+			TestResults="{Binding EavDevice.TestResults, Mode=OneWay}"
+			Meridians="{Binding Meridians}"
+			SelectedMeridian="{Binding SelectedMeridian, Mode=TwoWay}" 
+			Status="{Binding Status, Mode=OneWay}" 
+                          />
+
+        <Grid Grid.Column="1" Grid.ColumnSpan="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="4*" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+
+            <Grid Grid.Column="{Binding SelectedSide, Converter={StaticResource SelectedSideToColumnIndexConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="4*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" Orientation="Vertical">
+
+                    <Button Visibility="Visible" Foreground="Gray"
+						Width="Auto" 
+						Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}}" 
+						Style="{StaticResource ToolboxButton}"
+						Command="{Binding ToogleZoomCommand}"
+						Margin="0,0,0,5"
+                    >
+
+                        <ContentControl 
+							Width="{Binding ActualWidth, ConverterParameter=3, Converter={StaticResource SizeConverter}, RelativeSource={RelativeSource AncestorType={x:Type Button}, Mode=FindAncestor}}"
+							Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}}"
+							Content="{StaticResource ResourceKey=MagnifierIcon}"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

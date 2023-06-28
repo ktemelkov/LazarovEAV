@@ -1,0 +1,100 @@
+﻿<UserControl x:Name="userControl" x:Class="LazarovEAV.UI.GraphPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:oxy="clr-namespace:OxyPlot.Wpf;assembly=OxyPlot.Wpf"
+             xmlns:ui="clr-namespace:LazarovEAV.UI"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ViewModel="clr-namespace:LazarovEAV.ViewModel" 
+             xmlns:util="clr-namespace:LazarovEAV.UI.Util" 
+             xmlns:conf="clr-namespace:LazarovEAV.Config"             
+             mc:Ignorable="d" Height="300" Width="450" Background="#00000000" MouseDown="onPanelClick">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="..\Resources\widget_styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <ui:MeridianAxisConverter x:Key="AxisConverter" />
+            <ui:SizeConverter x:Key="SizeConverter" />
+            <ui:VerticalAxisLabelConverter x:Key="VAxisLabelConverter" />
+            <ui:BodySideToTestResultConverter x:Key="BodySideToTestResultConverter" />
+            <ui:GraphSelectionFillConverter x:Key="GraphSelectionFillConverter" />            
+        </ResourceDictionary>
+    </UserControl.Resources>
+    
+    <!--
+    <UserControl.DataContext>
+        <ViewModel:DiagModeViewModel/>
+    </UserControl.DataContext>
+    -->
+    
+    <Grid>            
+        <oxy:Plot x:Name="plot" Grid.Row="1" Background="Transparent"
+                      PlotAreaBorderThickness="1" Padding="0" IsLegendVisible="False" IsManipulationEnabled="False" Margin="10,8,10,12" DisconnectCanvasWhileUpdating="True" RenderTransformOrigin="0,0" PlotAreaBackground="#00000000">
+            <oxy:Plot.Axes>
+                <oxy:CategoryAxis Position="Bottom" Minimum="-0.5" Maximum="{Binding SelectedMeridian.Points.Count, Converter={StaticResource AxisConverter}}" 
+                                  IsTickCentered="False" FontSize="10" MajorTickSize="0" MajorGridlineThickness="0" IsZoomEnabled="False" IsPanEnabled="False"
+                                  ItemsSource="{Binding SelectedMeridian.Points}" LabelField="Name" 
+                                  Key="CategoryAxis" LabelFormatter="{Binding LabelFormatterFunc, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:GraphPanel}}}"/>
+
+                <oxy:LinearAxis Position="Bottom" Minimum="0" Maximum="{Binding SelectedMeridian.Points.Count}" 
+                                MajorGridlineStyle="Solid"
+                                MinorGridlineStyle="Dot"
+                                MinorTickSize="0" MajorTickSize="10" FontSize="0.1" 
+                                MajorGridlineThickness="1" MinorGridlineThickness="1"
+                                MajorStep="1" MinorStep="0.333334" 
+                                IsZoomEnabled="False" IsPanEnabled="False"/>
+
+                <oxy:LinearAxis MajorGridlineStyle="Solid" MinorGridlineStyle="Dash" Position="Left" Minimum="0" Maximum="100"
+                                MinorTickSize="5" MajorTickSize="10" FontSize="10" MajorGridlineThickness="1" MinorGridlineThickness="1"
+                                MajorStep="10" MinorStep="5" IsZoomEnabled="False" IsPanEnabled="False"                                
+                                LabelFormatter="{Binding BodySide, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:GraphPanel}}, Converter={StaticResource VAxisLabelConverter}}"
+                                />
+
+                <oxy:LinearAxis Position="Right" Minimum="0" Maximum="100" 
+                                MinorTickSize="5" MajorTickSize="10" FontSize="10" 
+                                MajorGridlineThickness="1" MinorGridlineThickness="1"
+                                MajorStep="10" MinorStep="5" IsZoomEnabled="False" IsPanEnabled="False"
+                                LabelFormatter="{Binding BodySide, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:GraphPanel}}, Converter={StaticResource VAxisLabelConverter}}"
+                                />
+
+            </oxy:Plot.Axes>
+            <oxy:Plot.Annotations>
+                <oxy:RectangleAnnotation MinimumY="{x:Static conf:AppConfig.EAV_WINDOW_BEGIN}" 
+                                         MaximumY="{x:Static conf:AppConfig.EAV_WINDOW_END}" 
+                                         Layer="BelowAxes" 
+                                         Fill="{Binding GraphCorridorColor, Source={x:Static conf:UiConfig.Instance}}">
+                </oxy:RectangleAnnotation>
+                <oxy:RectangleAnnotation MinimumY="0" 
+                                         MaximumY="100"
+                                         MinimumX="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:GraphPanel}}, Path=SelectedPointIndex, Converter={StaticResource AxisConverter}}"
+                                         MaximumX="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:GraphPanel}}, Path=SelectedPointIndex, Converter={StaticResource AxisConverter}, ConverterParameter='0.5'}"
+                                         Layer="BelowSeries"
+                                         >
+                    <oxy:RectangleAnnotation.Fill>
+                        <MultiBinding Converter="{StaticResource GraphSelectionFillConverter}">
+                            <Binding Path="BodySide" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:GraphPanel}}"/>
+                            <Binding Path="SelectedSide" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:GraphPanel}}"/>
+                            <Binding Path="GraphSelectionColor" Source="{x:Static conf:UiConfig.Instance}"/>
+                        </MultiBinding>
+                    </oxy:RectangleAnnotation.Fill>
+                </oxy:RectangleAnnotation>
+            </oxy:Plot.Annotations>
+            <oxy:Plot.Series>
+                <oxy:ScatterSeries XAxisKey="CategoryAxis" 
+                                   Mapping="{Binding DataMappingFunc, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:GraphPanel}}}"
+                                   MarkerType="Circle" MarkerFill="{Binding NormalDataColor, Source={x:Static conf:UiConfig.Instance}}"
+                                   MarkerSize="{Binding ActualWidth, Converter={StaticResource SizeConverter}, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type oxy:Plot}}}"
+                                   >
+                    <oxy:ScatterSeries.ItemsSource>
+                        <MultiBinding Converter="{StaticResource BodySideToTestResultConverter}">
+                            <Binding Path="BodySide" RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ui:GraphPanel}}"/>
+                            <Binding Path="LeftResults"/>
+                            <Binding Path="RightResults"/>
+                        </MultiBinding>
+                    </oxy:ScatterSeries.ItemsSource> 
+                </oxy:ScatterSeries>
+            </oxy:Plot.Series>
+        </oxy:Plot>
+    </Grid>
+</UserControl>

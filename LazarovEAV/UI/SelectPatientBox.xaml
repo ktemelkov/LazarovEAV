@@ -1,0 +1,187 @@
+﻿<UserControl x:Class="LazarovEAV.UI.SelectPatientBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:vm="clr-namespace:LazarovEAV.ViewModel"
+             xmlns:ui="clr-namespace:LazarovEAV.UI"
+             xmlns:util="clr-namespace:LazarovEAV.UI.Util"
+             xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+             xmlns:wt="clr-namespace:Xceed.Wpf.Toolkit;assembly=Xceed.Wpf.Toolkit"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="600">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="..\Resources\user_icon.xaml"/>
+                <ResourceDictionary Source="..\Resources\editor_icons.xaml"/>
+                <ResourceDictionary Source="..\Resources\button_styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <ui:ObjectReferenceToBoolConverter x:Key="ObjectReferenceToBoolConverter"/>
+            <ui:DateFormatConverter x:Key="DateFormatConverter"/>
+            <ui:EditorModeToGridVisibilityConverter x:Key="PatientEditorGridVisibilityConverter"/>
+
+        </ResourceDictionary>
+    </UserControl.Resources> 
+    <UserControl.DataContext>
+        <vm:SelectPatientBoxViewModel/>
+    </UserControl.DataContext>
+    <Grid>
+        <Grid.Background>
+            <LinearGradientBrush EndPoint="1,0.5" MappingMode="RelativeToBoundingBox" StartPoint="0,0.5">
+                <GradientStop Color="#FFF0F0F0" Offset="1"/>
+                <GradientStop Color="#FFFDFDFD"/>
+            </LinearGradientBrush>
+        </Grid.Background>
+        
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="280">
+
+            <ContentControl HorizontalAlignment="Center"
+                            Width="100" Foreground="#333333" Margin="0,0,0,16">
+                <ContentControl.Effect>
+                    <DropShadowEffect Color="#000000" BlurRadius="15" ShadowDepth="0" Opacity="0.5"/>
+                </ContentControl.Effect>
+                <Path Style="{StaticResource UserIconStyle}"/>
+            </ContentControl>
+
+            <Label Margin="0,10,0,0"
+                Content="Пациент:" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <ComboBox
+                    HorizontalAlignment="Stretch" VerticalAlignment="Center" ItemsSource="{Binding PatientList}" SelectedItem="{Binding SelectedPatient}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock VerticalAlignment="Top" TextWrapping="NoWrap" TextTrimming="WordEllipsis"
+                                       Text="{Binding Name}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <Button Name="newPatientButton"
+                        Grid.Column="1"
+                        Style="{StaticResource ToolbarButton}"      
+                        Margin="5,0,0,0"
+                        util:RoundButtonProperties.IconSize="18"
+                        Cursor="Hand"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Stretch"
+                        Command="{Binding CreatePatientCommand, Mode=OneWay}"
+                        >
+                    <util:RoundButtonProperties.Icon>
+                        <Path Style="{StaticResource AccountPlusPathStyle}" Fill="Gray" />
+                    </util:RoundButtonProperties.Icon>
+                </Button>
+            </Grid>
+
+            <Label Margin="0,10,0,0"
+                    Content="Дата/час на прегледа:" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0" VerticalAlignment="Center">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" Margin="0">
+                        <TextBox x:Name="dateTextBox"
+                            VerticalAlignment="Center" 
+                                 Width="80" 
+                                 Margin="0"
+                                 Text="{Binding LastSession.VisitDate, Converter={StaticResource DateFormatConverter}}" 
+                                 VerticalContentAlignment="Center" 
+                                 HorizontalContentAlignment="Center" IsReadOnly="True"/>
+                
+                        <Label Content=":" Margin="3,0,3,0" VerticalAlignment="Stretch" Padding="0" VerticalContentAlignment="Center"/>
+                        <wt:TimePicker x:Name="sessionTime"
+                                       Margin="0"
+                                       VerticalAlignment="Center" 
+                                       VerticalContentAlignment="Center" 
+                                       HorizontalContentAlignment="Center" CultureInfo="bg-BG"
+                                       Value="{Binding LastSession.VisitDate, Mode=TwoWay}"
+                                       />
+                    </StackPanel>
+                    <ComboBox x:Name="historyCombo"
+                              Visibility="Hidden"
+                              VerticalAlignment="Center"
+                              ItemsSource="{Binding PatientSessionsList}"
+                              ItemStringFormat="dd/MM/yyyy HH:mm" DropDownClosed="historyCombo_DropDownClosed"
+                              />
+                </Grid>
+                
+                <Button Name="setNowButton"
+                        Grid.Column="1"
+                        Style="{StaticResource ToolbarButton}"      
+                        Margin="5,0,0,0"
+                        util:RoundButtonProperties.IconSize="16"
+                        Cursor="Hand"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Stretch" 
+                        Click="buttonSetNow_Click"
+                        >
+                    <util:RoundButtonProperties.Icon>
+                        <Path Style="{StaticResource ClockPathStyle}" Fill="Gray" />
+                    </util:RoundButtonProperties.Icon>
+                </Button>
+
+                <Button Name="showHistoryButton"
+                        Grid.Column="1"
+                        Style="{StaticResource ToolbarButton}"      
+                        Margin="5,0,0,0"
+                        util:RoundButtonProperties.IconSize="16"
+                        Cursor="Hand"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Stretch" 
+                        Click="buttonShowHistory_Click"
+                        IsEnabled="{Binding HasItems, ElementName=historyCombo}"
+                        >
+                    <util:RoundButtonProperties.Icon>
+                        <Path Style="{StaticResource ArchivePathStyle}" Fill="Gray" />
+                    </util:RoundButtonProperties.Icon>
+                </Button>
+
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,48">
+
+                <Button HorizontalAlignment="Center" Width="90" Content="Продължи" Margin="0,30,0,0"
+                        Click="ButtonApply_Click">
+                </Button>
+                <Button HorizontalAlignment="Center" Width="90" Content="Откажи" Margin="10,30,0,0" 
+                        IsEnabled="{Binding ActivePatient, Converter={StaticResource ObjectReferenceToBoolConverter}}">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <ui:SetPropertyAction PropertyName="ActiveOverlay" TargetObject="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType={x:Type ui:SelectPatientBox}}}" PropertyValue="{x:Static ui:UiOverlayType.None}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+            </StackPanel>
+        </StackPanel>
+
+        <Grid x:Name="fieldsContainer"
+              Visibility="{Binding EditorMode, Converter={StaticResource PatientEditorGridVisibilityConverter}, ConverterParameter=1}"
+              Background="#10000000">
+            <ui:PatientDataInputBox Height="250" MaxWidth="800" Margin="40"/>
+        </Grid>
+
+        <Grid x:Name="errorMessage"
+                Visibility="{Binding EditorMode, Converter={StaticResource PatientEditorGridVisibilityConverter}, ConverterParameter=3}"
+                Background="#10000000">
+
+            <Grid Height="80" Margin="40" MaxWidth="800">
+                <Rectangle Grid.RowSpan="2" Fill="White" RadiusX="3" RadiusY="3" Stroke="#FFAAAAAA" StrokeThickness="1"/>
+
+                <TextBlock Margin="10,10,10,10"
+                    Text="{Binding ErrorMessage}"
+                    FontSize="16" TextWrapping="Wrap" 
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center" 
+                    />
+
+            </Grid>
+        </Grid>
+
+    </Grid>
+</UserControl>
